@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+
+  postgres:
+    image: postgres:latest
+    restart: on-failure
+    environment:
+      - POSTGRES_USER=pong
+      - POSTGRES_PASSWORD=pong
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+        - '5432:5432'
+
+volumes:
+  postgres:
+    driver: local
+    driver_opts:
+      type: none
+      device:  /Users/mmounaji/prisma
+      o: bind
