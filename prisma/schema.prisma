@@ -25,24 +25,25 @@ model User {
   avatar           String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  recipient        Notification[]
   firstFriendship  Friendship[]     @relation("from")
   secondFriendship Friendship[]     @relation("to")
-  blockedByUser    BlockedUser[]        @relation("blockeById")
-  blockedUser      BlockedUser[]        @relation("blockedId")
+  blockedByUser    BlockedUser[]    @relation("blockeById")
+  blockedUser      BlockedUser[]    @relation("blockedId")
   message          Message[]
   ownedRooms       ChatRoom[]
   roomMember       ChatRoomMember[]
 }
 
 model Friendship {
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  id        String   @id @default(uuid())
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  id        String           @id @default(uuid())
   fromUser  String
   toUser    String
-  from      User     @relation("from", fields: [fromUser], references: [userId], onDelete: Cascade)
-  to        User     @relation("to", fields: [toUser], references: [userId], onDelete: Cascade)
-  accepted  Boolean  @default(false)
+  from      User             @relation("from", fields: [fromUser], references: [userId], onDelete: Cascade)
+  to        User             @relation("to", fields: [toUser], references: [userId], onDelete: Cascade)
+  status    FriendshipStatus
 
   @@unique([fromUser, toUser], name: "unique_friendship")
 }
@@ -76,8 +77,8 @@ model ChatRoomMember {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   id         String   @id @default(uuid())
-  isAdmin    String
-  isBanned   String
+  isAdmin    Boolean  @default(false)
+  isBanned   Boolean  @default(false)
   bannedAt   String
   member     User     @relation(fields: [memberID], references: [userId], onDelete: Cascade)
   memberID   String
@@ -97,6 +98,29 @@ model ChatRoom {
   ownerId   String
   messages  Message[]
   members   ChatRoomMember[]
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  createdAt   DateTime         @default(now())
+  type        NotificationType
+  content     String
+  isRead      Boolean          @default(false)
+  recipient   User             @relation(fields: [recipientId], references: [userId], onDelete: Cascade)
+  recipientId String
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum NotificationType {
+  FriendRequest
+  MessageReceived
+  RoomInvitation
+  Other
 }
 
 enum ChatRoomType {
