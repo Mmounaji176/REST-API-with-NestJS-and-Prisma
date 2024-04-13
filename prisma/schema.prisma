@@ -14,28 +14,94 @@ datasource db {
 }
 
 model User {
-  userId       String   @id @default(uuid())
-  email        String?  @unique
-  username     String?  @unique
-  intraId      String?  @unique
-  online       Boolean  @default(false)
-  firstName    String?
-  lastName     String?
-  password     String?
-  avatar       String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  firstFriend  Friend[] @relation("from")
-  secondFriend Friend[] @relation("to")
+  userId           String           @id @default(uuid())
+  email            String?          @unique
+  username         String?          @unique
+  intraId          String?          @unique
+  online           Boolean          @default(false)
+  firstName        String?
+  lastName         String?
+  password         String?
+  avatar           String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  firstFriendship  Friendship[]     @relation("from")
+  secondFriendship Friendship[]     @relation("to")
+  blockedByUser    BlockedUser[]        @relation("blockeById")
+  blockedUser      BlockedUser[]        @relation("blockedId")
+  message          Message[]
+  ownedRooms       ChatRoom[]
+  roomMember       ChatRoomMember[]
 }
 
-model Friend {
-  reatedAt  DateTime @default(now())
+model Friendship {
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  id       String  @id
-  fromUser String
-  toId     String
-  from     User    @relation("from", fields: [fromUser], references: [userId], onDelete: Cascade)
-  to       User    @relation("to", fields: [toId], references: [userId], onDelete: Cascade)
-  accepted Boolean @default(false)
+  id        String   @id @default(uuid())
+  fromUser  String
+  toUser    String
+  from      User     @relation("from", fields: [fromUser], references: [userId], onDelete: Cascade)
+  to        User     @relation("to", fields: [toUser], references: [userId], onDelete: Cascade)
+  accepted  Boolean  @default(false)
+
+  @@unique([fromUser, toUser], name: "unique_friendship")
+}
+
+model BlockedUser {
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  id         String   @id @default(uuid())
+  blocked    String
+  blockedBy  String
+  blockedId  User     @relation("blockedId", fields: [blocked], references: [userId], onDelete: Cascade)
+  blockeById User     @relation("blockeById", fields: [blockedBy], references: [userId], onDelete: Cascade)
+
+  @@unique([blocked, blockedBy], name: "unique_block")
+}
+
+model Message {
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  id         String   @id @default(uuid())
+  author     User     @relation(fields: [authorId], references: [userId], onDelete: Cascade)
+  authorId   String
+  content    String
+  ChatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  chatRoomId String
+
+  @@unique([createdAt]) // no dupliccate msg
+}
+
+model ChatRoomMember {
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  id         String   @id @default(uuid())
+  isAdmin    String
+  isBanned   String
+  bannedAt   String
+  member     User     @relation(fields: [memberID], references: [userId], onDelete: Cascade)
+  memberID   String
+  ChatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  chatRoomId String
+
+  @@unique([memberID, chatRoomId], name: "unique_member_room")
+}
+
+model ChatRoom {
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  id        String           @id @default(uuid())
+  roomName  String?
+  type      ChatRoomType     @default(public)
+  owner     User             @relation(fields: [ownerId], references: [userId], onDelete: Cascade)
+  ownerId   String
+  messages  Message[]
+  members   ChatRoomMember[]
+}
+
+enum ChatRoomType {
+  public
+  Dm
+  private
+  protected
 }
